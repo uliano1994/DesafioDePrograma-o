@@ -1,5 +1,6 @@
 package Inicial;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -10,23 +11,88 @@ public class Principal {
 	static ArrayList<EspacoCafe> espacosCafe; 
 	static ArrayList<Pessoa> participantes; 
 	static ArrayList<SalaEvento> salasEvento; 
+	
+	static File fileEspacoCafe;
+	static File fileParticipantes;
+	static File fileSalasEventos;
+	
 	static Scanner leia;
 	static int ultimaSala;
 	static int ultimoEspacoCafe;
 	
 	public static void main(String[] args) {
+		
 		ultimaSala = -1;
 		ultimoEspacoCafe = -1;
+		
 		leia = new Scanner (System.in);
+		
 		espacosCafe = new ArrayList<EspacoCafe>();
 		participantes = new ArrayList<Pessoa>();
 		salasEvento = new ArrayList<SalaEvento>();
+
+		carregaArquivos();
 		menu();
 
 	}
 	
-	static void menu() {
-		String opcao ="0" ;
+	static void carregaArquivos() {
+		try {
+			fileEspacoCafe = Arquivo.AbrirArquivo("espacoCafe");
+			fileParticipantes = Arquivo.AbrirArquivo("participantes");
+			fileSalasEventos = Arquivo.AbrirArquivo("salasEvento");
+			
+			ArrayList<String> arqEspacoCafe = Arquivo.lerArquivo(fileEspacoCafe);
+			ArrayList<String> arqParticipantes = Arquivo.lerArquivo(fileParticipantes);
+			ArrayList<String> arqSalasEventos = Arquivo.lerArquivo(fileSalasEventos);
+			
+			if(!arqEspacoCafe.isEmpty()) {
+				for (String linha : arqEspacoCafe) {
+					String[] valores = linha.split(";");
+					
+					EspacoCafe espacoCafe = new EspacoCafe();
+					espacoCafe.setNome(valores[0]);
+					espacoCafe.setLotacao( Integer.parseInt(valores[1]) );
+					espacosCafe.add(espacoCafe);
+					
+				}
+			}
+			
+			if(!arqSalasEventos.isEmpty()) {
+				for (String linha : arqSalasEventos) {
+					String[] valores = linha.split(";");
+					
+					SalaEvento salaEvento = new SalaEvento(); ;
+					salaEvento.setNome(valores[0]);
+					salaEvento.setLotacao(Integer.parseInt(valores[1]));					
+					salasEvento.add(salaEvento);
+					
+				}
+			}
+			
+			if(!arqParticipantes.isEmpty()) {
+				for (String linha : arqParticipantes) {
+					String[] valores = linha.split(";");
+					
+					Pessoa participante = new Pessoa(); 
+					participante.setNome(valores[0]);
+					participante.setSobrenome(valores[1]);
+					participantes.add(participante);					
+				}
+			}
+			
+			if(!arqEspacoCafe.isEmpty() && !arqSalasEventos.isEmpty() && !arqParticipantes.isEmpty()) {
+				calculaLocal();
+			}
+			
+		} catch (Exception e) {
+			System.out.println("Nao foi possivel carregar os arquivos");
+		}
+	}
+	
+	static void menu(){
+		String opcao = "0";
+		
 		do {
 			System.out.println("|-------------------------------|");
 			System.out.println("|        >>Bem vindo<<          |");
@@ -42,44 +108,50 @@ public class Principal {
 			
 			opcao = leia.nextLine();
 			
-			switch(opcao) {
-				case "1":{
-					cadastrarCafe();
-					break;
-				}
-				case "2":{
-					cadastrarEvento();
-					break;
-				}
-				case "3":{
-					cadastrarPessoa();
-					break;
-				}
-				case "4":{
-					consultarCafe();
-					break;
-				}
-				case "5":{
-					consultarEvento();
-					break;
-				}
-				case "6":{
-					consultarPessoas();
-					break;
-				}
-				case "0":{
-					System.out.println("Obrigado por usar este programa");
-					System.exit(0);
-				}
-				default:{
-					System.out.println("Esta opção é invalida");
-				}
+			try {
+				switch(opcao) {
+					case "1":{
+						cadastrarCafe();
+						break;
+					}
+					case "2":{
+						cadastrarEvento();
+						break;
+					}
+					case "3":{
+						cadastrarPessoa();
+						break;
+					}
+					case "4":{
+						consultarCafe();
+						break;
+					}
+					case "5":{
+						consultarEvento();
+						break;
+					}
+					case "6":{
+						consultarPessoas();
+						break;
+					}
+					case "0":{
+						System.out.println("Obrigado por usar este programa");
+						System.exit(0);
+					}
+					default:{
+						System.out.println("Você digitou um numero invalido");
+					}
+				}				
+			}catch (Exception e) {
+				carregaArquivos();
+				menu();
 			}
+
 			
-		}while(opcao!="0");
+		}while(opcao != "0");
 	}
 	
-	static void voltarMenu() {
+	static void voltarMenu() throws Exception {
 		System.out.println("Pressione enter para voltar ao menu");
 		leia.nextLine();
 		menu();
@@ -97,31 +169,26 @@ public class Principal {
 		
 	}
 		
-	static void cadastrarCafe() {
+	static void cadastrarCafe() throws Exception {
 		if (espacosCafe.size()>=2) {
 			System.out.println("Os dois espacos café ja estao cadastrados");
 			voltarMenu();
 		}
 		
-		if (participantes.size() >0 ) {
-			System.out.println("Não é possivel cadastra mais espaço café");
-			voltarMenu();
-		}
-		
 		EspacoCafe espacoCafe = new EspacoCafe();
-		System.out.println("Digite o nome do espaço café");
+		System.out.println("Digite o nome do espaço cafe");
 		espacoCafe.setNome(leia.nextLine());
 		System.out.println("Digite a lotação do espaço café");
 		espacoCafe.setLotacao(leia.nextInt());
 		leia.nextLine();
 		
 		espacosCafe.add(espacoCafe);
+		Arquivo.escreveNovaLinha(fileEspacoCafe, espacoCafe.getNome(), String.valueOf(espacoCafe.getLotacao()));
 		
 		System.out.println("Digite 0 para volta ao Menu");
 		System.out.println("Digite 1 Para cadastrar um novo espaço café");	
 		int opcao = leia.nextInt();
 		leia.nextLine();
-		
 		if (opcao==0) {
 			menu();
 		}
@@ -130,21 +197,16 @@ public class Principal {
 		}
 	}
 	
-	static void cadastrarEvento() {
-		
-		if (participantes.size() >0 ) {
-			System.out.println("Não é possivel cadastra mais sala de eventos");
-			voltarMenu();
-		}
-		
+	static void cadastrarEvento() throws Exception {
 		SalaEvento salaEvento = new SalaEvento(); 
-		System.out.println("Digite o nome da sala");
+		System.out.println("Digite o nome da sala de eventos");
 		salaEvento.setNome(leia.nextLine());
 		System.out.println("Digite a lotação");
 		salaEvento.setLotacao(leia.nextInt());
 		leia.nextLine();
 		
 		salasEvento.add(salaEvento);
+		Arquivo.escreveNovaLinha(fileSalasEventos, salaEvento.getNome(), String.valueOf(salaEvento.getLotacao()));
 		
 		System.out.println("Digite 0 para volta ao Menu");
 		System.out.println("Digite 1 Para cadastrar uma nova sala de evento");		
@@ -158,10 +220,11 @@ public class Principal {
 		}
 	}
 	
-	static void cadastrarPessoa() {
+	static void cadastrarPessoa() throws Exception {
 		
 		if (salasEvento.size()==0 || espacosCafe.size()==0) {
 			System.out.println("Cadastre salas de eventos e espacos cafe antes de cadastrar pessoa");
+			voltarMenu();
 		}
 		
 		ultimaSala = ultimaSala +1;
@@ -170,7 +233,7 @@ public class Principal {
 		}
 		SalaEvento salaAtual = salasEvento.get(ultimaSala);
 		if (salaAtual.getParticipantesHorario1().size()>= salaAtual.getLotacao()) {
-			System.out.println("Não é possivel cadastrar mais participantes! Todas as vagas foram preenchidas");
+			System.out.println("Não é possivel cadastrar mais participantes! Todas as vagas já foram preenchidas");
 			voltarMenu();
 		}
 		
@@ -191,9 +254,56 @@ public class Principal {
 		participante.setSobrenome(leia.nextLine());
 		
 		participantes.add(participante);
+		Arquivo.escreveNovaLinha(fileParticipantes, participante.getNome(), participante.getSobrenome());
 		
-		espacosCafe.get(ultimoEspacoCafe).addParticipanteHorario1(participante);
-		salasEvento.get(ultimaSala).addParticipanteHorario1(participante);
+		calculaLocal();
+		
+		System.out.println("Digite 0 para volta ao Menu");
+		System.out.println("Digite 1 Para cadastrar um novo participante");	
+		int opcao = leia.nextInt();
+		leia.nextLine();
+		if (opcao==0) {
+			menu();
+		}
+		else {
+			cadastrarPessoa();
+		}
+	}
+	
+	static void calculaLocal() {
+		
+		for(int i = 0; i < salasEvento.size(); i++) {
+			salasEvento.get(i).setParticipantesHorario1(new ArrayList<Pessoa>());
+			salasEvento.get(i).setParticipantesHorario2(new ArrayList<Pessoa>());
+		}
+		
+		for(int i = 0; i < espacosCafe.size(); i++) {
+			espacosCafe.get(i).setParticipantesHorario1(new ArrayList<Pessoa>());
+			espacosCafe.get(i).setParticipantesHorario2(new ArrayList<Pessoa>());			
+		}
+		
+		ultimaSala = -1;
+		ultimoEspacoCafe = -1;
+		
+		
+		for(Pessoa participante: participantes) {
+			
+			ultimaSala = ultimaSala +1;
+			if (ultimaSala == salasEvento.size()) {
+				ultimaSala = 0;
+			}
+			
+			ultimoEspacoCafe = ultimoEspacoCafe +1;
+			if (ultimoEspacoCafe == espacosCafe.size()) {
+				ultimoEspacoCafe = 0;
+			}
+			
+			espacosCafe.get(ultimoEspacoCafe).addParticipanteHorario1(participante);
+			salasEvento.get(ultimaSala).addParticipanteHorario1(participante);
+		}
+
+		
+
 		
 		for(int i = 0; i < salasEvento.size(); i++ ) {
 			salasEvento.get(i).setParticipantesHorario2(new ArrayList<Pessoa>());
@@ -261,21 +371,17 @@ public class Principal {
 				}
 			}
 			
-		}	
+		}
 		
-		System.out.println("Digite 0 para volta ao Menu");
-		System.out.println("Digite 1 Para cadastrar um novo participante");	
-		int opcao = leia.nextInt();
-		leia.nextLine();
-		if (opcao==0) {
-			menu();
-		}
-		else {
-			cadastrarPessoa();
-		}
+		
 	}
 	
-	static void consultarCafe() {
+	static void consultarCafe() throws Exception {
+		if(espacosCafe.size() == 0) {
+			System.out.println("Nenhuma espaco cafe cadastrado ainda!");
+			voltarMenu();
+		}
+		
 		int contador = 0;
 		System.out.println("Digite o o numero corespondente ao espaço café");
 		for (EspacoCafe espacoCafe: espacosCafe) {
@@ -296,16 +402,30 @@ public class Principal {
 		}
 	}
 	
-	static void pessoasNoCafe(int posicao) {
-		EspacoCafe cafeAtual = espacosCafe.get(posicao);
-		ArrayList<Pessoa> participantesAtual = cafeAtual.getParticipantesHorario1();
+	static void pessoasNoCafe(int posicao) throws Exception {
 		
-		System.out.printf("Participantes do %do espaço café %n",posicao+1);
-		for (Pessoa participante: participantesAtual) {
+		if(participantes.size() == 0) {
+			System.out.println("Nenhuma participante cadastrado ainda!");
+			voltarMenu();
+		}
+		
+		EspacoCafe cafeAtual = espacosCafe.get(posicao);
+		ArrayList<Pessoa> participantesH1 = cafeAtual.getParticipantesHorario1();
+		ArrayList<Pessoa> participantesH2 = cafeAtual.getParticipantesHorario2();
+		
+		System.out.printf("Participantes no espaço café: %s %n",cafeAtual.getNome());
+		System.out.println("Primeiro Horario");
+		for (Pessoa participante: participantesH1) {
 			System.out.printf("Nome: %s %s %n",participante.getNome(),participante.getSobrenome());
 		}
 		
-		System.out.println("Digite 1 para consultar um novo espaco café");
+		System.out.printf("-----------------------------------");
+		System.out.println("Segundo Horario");
+		for (Pessoa participante: participantesH2) {
+			System.out.printf("Nome: %s %s %n",participante.getNome(),participante.getSobrenome());
+		}
+		
+		System.out.println("Digite 1 para consultar um novo espaco cafe");
 		System.out.println("Digite 0 para voltar ao menu");
 		int opcao = leia.nextInt();
 		leia.nextLine();
@@ -315,7 +435,13 @@ public class Principal {
 		menu();
 	}
 	
-	static void consultarEvento() {
+	static void consultarEvento() throws Exception {
+		
+		if(salasEvento.size() == 0) {
+			System.out.println("Nenhuma sala de evento cadastrada ainda!");
+			voltarMenu();
+		}
+		
 		System.out.println("Digite o numero corespondente a sala de eventos");
 		int contador = 0;
 		for (SalaEvento salaEvento: salasEvento) {
@@ -336,12 +462,26 @@ public class Principal {
 		}
 	}
 	
-	static void pessoasNaSala(int posicao) {
+	static void pessoasNaSala(int posicao) throws Exception {
+		
+		if(participantes.size() == 0) {
+			System.out.println("Nenhuma participante cadastrado ainda!");
+			voltarMenu();
+		}
+		
 		SalaEvento salaAtual = salasEvento.get(posicao);
-		ArrayList<Pessoa> participantesAtual = salaAtual.getParticipantesHorario1();
+		ArrayList<Pessoa> participantesH1 = salaAtual.getParticipantesHorario1();
+		ArrayList<Pessoa> participantesH2 = salaAtual.getParticipantesHorario2();
 		
 		System.out.printf("Participantes na sala %s %n",salaAtual.getNome());
-		for (Pessoa participante: participantesAtual) {
+		System.out.println("Primeiro Horario");
+		for (Pessoa participante: participantesH1) {
+			System.out.printf("Nome: %s %s %n",participante.getNome(),participante.getSobrenome());
+		}
+		
+		System.out.printf("-----------------------------------");
+		System.out.println("Segundo Horario");
+		for (Pessoa participante: participantesH2) {
 			System.out.printf("Nome: %s %s %n",participante.getNome(),participante.getSobrenome());
 		}
 		
@@ -355,7 +495,13 @@ public class Principal {
 		menu();
 	}
 	
-	static void consultarPessoas() {
+	static void consultarPessoas() throws Exception {
+		
+		if(participantes.size() == 0) {
+			System.out.println("Nenhuma participante cadastrado ainda!");
+			voltarMenu();
+		}
+		
 		System.out.println("Digite o numero corespondente ao participante");
 		int contador = 0;
 		for (Pessoa participante: participantes) {
@@ -378,7 +524,7 @@ public class Principal {
 		
 	}
 
-	static void consultarPessoa(int posicao) {
+	static void consultarPessoa(int posicao) throws Exception {
 		Pessoa participante = participantes.get(posicao);
 		
 		System.out.printf("Participante: %s %s %n", participante.getNome(),participante.getSobrenome());
@@ -386,13 +532,13 @@ public class Principal {
 		for (SalaEvento salaEvento : salasEvento) {
 			for(Pessoa pessoa: salaEvento.getParticipantesHorario1()) {
 				if(pessoa.getNome() == participante.getNome() && pessoa.getSobrenome() == participante.getSobrenome()){
-					System.out.printf("Sala de Evento no primeiro horario e: %s %n", salaEvento.getNome() );
+					System.out.printf("Sala de Evento no primeiro horario é: %s %n", salaEvento.getNome() );
 				}
 			}	
 			
 			for(Pessoa pessoa: salaEvento.getParticipantesHorario2()) {
 				if(pessoa.getNome() == participante.getNome() && pessoa.getSobrenome() == participante.getSobrenome()){
-					System.out.printf("Sala de Evento no segundo horario e: %s %n", salaEvento.getNome() );
+					System.out.printf("Sala de Evento no segundo horario é: %s %n", salaEvento.getNome() );
 				}
 			}
 		}
@@ -400,13 +546,13 @@ public class Principal {
 		for (EspacoCafe espacoCafe : espacosCafe) {
 			for(Pessoa pessoa: espacoCafe.getParticipantesHorario1()) {
 				if(pessoa.getNome() == participante.getNome() && pessoa.getSobrenome() == participante.getSobrenome()){
-					System.out.printf("Espaco Cafe no primeiro horario e: %s %n", espacoCafe.getNome() );
+					System.out.printf("Espaco Cafe no primeiro horario é: %s %n", espacoCafe.getNome() );
 				}
 			}	
 			
 			for(Pessoa pessoa: espacoCafe.getParticipantesHorario2()) {
 				if(pessoa.getNome() == participante.getNome() && pessoa.getSobrenome() == participante.getSobrenome()){
-					System.out.printf("Espaco Cafe no segundo horario e: %s %n", espacoCafe.getNome() );
+					System.out.printf("Espaco Cafe no segundo horario é: %s %n", espacoCafe.getNome() );
 				}
 			}	
 		}
